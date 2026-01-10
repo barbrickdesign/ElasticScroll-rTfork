@@ -113,6 +113,7 @@ class ElasticMinimal:
         if not isinstance(scroll, str) or not scroll:
             raise ValueError("scroll must be a non-empty string")
 
+        sid = None  # Initialize scroll ID for cleanup in finally block
         try:
             # Initial search request
             logger.debug(
@@ -171,15 +172,11 @@ class ElasticMinimal:
             raise
         finally:
             # Clear the scroll context to free resources
-            # Check if sid was successfully assigned during execution
-            try:
-                if sid:
+            if sid:
+                try:
                     self.es_client.clear_scroll(scroll_id=sid)
                     logger.debug("Cleared scroll context")
-            except (NameError, UnboundLocalError):
-                # sid was never assigned, nothing to clear
-                pass
-            except Exception as e:
-                logger.warning(
-                    "Failed to clear scroll context: %s", str(e)
-                )
+                except Exception as e:
+                    logger.warning(
+                        "Failed to clear scroll context: %s", str(e)
+                    )
