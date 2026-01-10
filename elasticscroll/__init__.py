@@ -38,8 +38,8 @@ class ElasticMinimal:
         """Initialize the ElasticMinimal client.
 
         Args:
-            elastic_endpoint: A URL corresponding to the API endpoint 
-                of the elasticsearch service (e.g., 'http://localhost:9200').
+            elastic_endpoint: A URL corresponding to the API endpoint of the
+                elasticsearch service (e.g., 'http://localhost:9200').
 
         Raises:
             ValueError: If elastic_endpoint is empty or invalid.
@@ -133,11 +133,11 @@ class ElasticMinimal:
             # Elasticsearch 7.x returns a dict, 8.x may return an int
             total_hits = page['hits']['total']
             if isinstance(total_hits, dict):
-                scroll_size = total_hits['value']
+                total_count = total_hits['value']
             else:
-                scroll_size = total_hits
+                total_count = total_hits
             
-            logger.debug("Total hits: %d", scroll_size)
+            logger.debug("Total hits: %d", total_count)
             results_count = 0
 
             # Process initial batch of results
@@ -146,11 +146,11 @@ class ElasticMinimal:
                 yield res['_source']
 
             # Scroll through remaining results
-            scroll_size = len(page['hits']['hits'])
-            while scroll_size > 0:
+            batch_size = len(page['hits']['hits'])
+            while batch_size > 0:
                 page = self.es_client.scroll(scroll_id=sid, scroll=scroll)
                 sid = page['_scroll_id']
-                scroll_size = len(page['hits']['hits'])
+                batch_size = len(page['hits']['hits'])
 
                 for res in page['hits']['hits']:
                     results_count += 1
