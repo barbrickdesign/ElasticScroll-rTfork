@@ -139,7 +139,13 @@ class ElasticMinimal:
             logger.debug("Total hits: %d", scroll_size)
             results_count = 0
 
-            # Scroll through results
+            # Process initial batch of results
+            for res in page['hits']['hits']:
+                results_count += 1
+                yield res['_source']
+
+            # Scroll through remaining results
+            scroll_size = len(page['hits']['hits'])
             while scroll_size > 0:
                 page = self.es_client.scroll(scroll_id=sid, scroll=scroll)
                 sid = page['_scroll_id']
@@ -165,11 +171,15 @@ class ElasticMinimal:
             raise
         finally:
             # Clear the scroll context to free resources
-            if 'sid' in locals() and sid:
-                try:
+            # Check if sid was successfully assigned during execution
+            try:
+                if sid:
                     self.es_client.clear_scroll(scroll_id=sid)
                     logger.debug("Cleared scroll context")
-                except Exception as e:
-                    logger.warning(
-                        "Failed to clear scroll context: %s", str(e)
-                    )
+            except (NameError, UnboundLocalError):
+                # sid was never assigned, nothing to clear
+                pass
+            except Exception as e:
+                logger.warning(
+                    "Failed to clear scroll context: %s", str(e)
+                )
