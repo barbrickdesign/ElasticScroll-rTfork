@@ -5,7 +5,10 @@ from pathlib import Path
 
 # Read the contents of README file
 this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text(encoding='utf-8')
+try:
+    long_description = (this_directory / "README.md").read_text(encoding='utf-8')
+except FileNotFoundError:
+    long_description = "Minimal library for efficient elasticsearch queries"
 
 setup(
     name='elasticscroll',

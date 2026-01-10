@@ -120,12 +120,24 @@ class ElasticMinimal:
                 "Starting scroll query on index '%s' with size=%d, scroll=%s",
                 index, size, scroll
             )
-            page = self.es_client.search(
-                index=index,
-                scroll=scroll,
-                size=size,
-                body=lookup
-            )
+            # Use **lookup to unpack query for ES 8.x compatibility
+            # while maintaining backward compatibility with ES 7.x
+            try:
+                # Try ES 8.x+ style (query as keyword args)
+                page = self.es_client.search(
+                    index=index,
+                    scroll=scroll,
+                    size=size,
+                    **lookup
+                )
+            except TypeError:
+                # Fall back to ES 7.x style (body parameter)
+                page = self.es_client.search(
+                    index=index,
+                    scroll=scroll,
+                    size=size,
+                    body=lookup
+                )
             
             sid = page['_scroll_id']
             
